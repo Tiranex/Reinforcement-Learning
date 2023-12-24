@@ -23,7 +23,7 @@ class MazeEnv(gym.Env):
             self.size = size + 1  # Square grid size
 
         self.window_size=(512,512,3)
-        self.observation_dim = (36,36,3)
+        self.observation_dim = (128,128,3)
         self.grid = np.zeros((size, size))
         self.player = np.array([0,0])
         self.prev_position=np.array([[0,0]])
@@ -31,8 +31,8 @@ class MazeEnv(gym.Env):
 
         self.generate_maze()
 
-        self.observation_space = spaces.Box(low=0, high=255,
-                                            shape=self.observation_dim[::-1], dtype=np.uint8) # Image stored as float values
+        self.observation_space = spaces.Box(low=0, high=1,
+                                            shape=self.observation_dim[::-1], dtype=np.float16) # Image stored as float values
         # Action Space
         self.action_space = spaces.Discrete(4) # [up, right, down, left]
 
@@ -65,11 +65,11 @@ class MazeEnv(gym.Env):
             reward=+0.05
             # Check if it's visited
             if any(np.array_equal(self.player, arr) for arr in self.prev_position):
-                reward+= -0.20
+                reward+= -0.1
             else:
                 self.prev_position=np.vstack((self.prev_position, self.player))
         else:
-            reward=-0.50
+            reward=-0.25
 
         # update score
         self.score += reward
@@ -78,7 +78,7 @@ class MazeEnv(gym.Env):
         if np.array_equal(self.player, [self.size-1, self.size-1]):
             terminated = True
             reward=1
-        elif self.score <= -1:
+        elif self.score <= -2:
             terminated = True
         else:
             terminated = False
@@ -97,11 +97,6 @@ class MazeEnv(gym.Env):
 
         self.score = 0
 
-        if self.render_mode == "human":
-            cv2.imshow("Game", self.render_maze(self.grid.copy()))
-            cv2.waitKey(1)
-
-
         observation=self._get_obs()
         info = self._get_info()
 
@@ -112,7 +107,7 @@ class MazeEnv(gym.Env):
 
         # Observation of the neural network is the same space but rescaled to smaller dimension
         # cv2.imshow("Test", observation)
-        # observation = observation / 255.
+        observation = observation / 255.
         observation = np.reshape(observation,self.observation_dim)
         return observation
 

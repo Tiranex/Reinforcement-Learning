@@ -7,7 +7,7 @@ import tensorflow as tf
 
 
 model = tf.keras.models.Sequential([
-            tf.keras.layers.Conv2D(16, 3, activation='relu', input_shape=(36,36,3)),
+            tf.keras.layers.Conv2D(16, 3, activation='relu', input_shape=(128,128,3)),
             tf.keras.layers.MaxPooling2D(),
             tf.keras.layers.Conv2D(64, 3, activation='relu'),
             tf.keras.layers.MaxPooling2D(),
@@ -20,27 +20,30 @@ model = tf.keras.models.Sequential([
 
 agent=DQN(model)
 
-env=MazeEnv(size=7)
-test_env=MazeEnv(size=7, render_mode="human")
-N_ACTION=4
+env=MazeEnv(size=4)
+test_env=MazeEnv(size=4, render_mode="human")
+N_ACTION=env.action_space.n
 
 # Exploration
 epsilon=1
-EPSILON_DECAY=0.99
+EPSILON_DECAY=0.995
 MIN_EPSILON=0.001
 
 # Visualization
 PREVIEW_TRAIN=False
-PREVIEW_EVAL=True
+PREVIEW_EVAL=False
 
 # Episodes
-N_EPISODES=20000
-AGGREGATE_STATS_EVERY=100
-LOAD_PATH="best_model_maze.keras"
+N_EPISODES=2000
+AGGREGATE_STATS_EVERY=250
+LOAD_PATH=""
 
+if LOAD_PATH != "":
+    agent.load(LOAD_PATH)
 current_ep_rewards=[]
 ep_rewards=[]
 
+agent.fill_min_memory(env)
 for episode in tqdm(range(N_EPISODES), ascii=True, unit='episodes'):
 
     # Set reward to initial values
@@ -91,11 +94,12 @@ for episode in tqdm(range(N_EPISODES), ascii=True, unit='episodes'):
 
         # Evaluation
         print("Reward: ", agent.evaluate_policy(test_env, render=PREVIEW_EVAL))
+        agent.save("best_model_maze.keras")
         
 
     # Decay epsilon
     if epsilon > MIN_EPSILON:
         epsilon *= EPSILON_DECAY
         epsilon = max(MIN_EPSILON, epsilon)
-    
+
 agent.save("best_model_maze.keras")

@@ -6,8 +6,8 @@ from collections import deque
 REPLAY_MEMORY_SIZE=50000
 MIN_REPLAY_MEMORY=5000
 BATCH_SIZE=64
-DISCOUNT=0.97
-UPDATE_TARGET_COUNTER=20
+DISCOUNT=0.98
+UPDATE_TARGET_COUNTER=40
 
 class DQN:
 
@@ -15,7 +15,7 @@ class DQN:
 
         # Create main and target model
         self.main_model =self.create_model(arq)
-        self.target_model = self.create_model(arq)
+        self.target_model = tf.keras.models.clone_model(self.main_model)
 
         # Set weights of main to target
         self.target_model.set_weights(self.main_model.get_weights())
@@ -37,6 +37,18 @@ class DQN:
     def append_replay_memory(self, transition):
         self.replay_memory.append(transition)
 
+    def fill_min_memory(self, env):
+        while len(self.replay_memory) < MIN_REPLAY_MEMORY:
+            current_state, _=env.reset()
+            done = False
+
+            # We do random choices until we fill the memory
+            while not done:
+                action= random.choice([i for i in range(env.action_space.n)])
+                new_state, reward, done, truncated, info = env.step(action)
+                self.replay_memory.append((current_state, action, new_state, reward, done))
+                current_state = new_state
+        
     # Train loop
     def train(self, terminal_state):
 
